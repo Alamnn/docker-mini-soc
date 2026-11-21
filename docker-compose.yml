@@ -1,0 +1,105 @@
+name: docker-mini-soc
+
+services:
+  siem-indexer:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: mini-soc-indexer
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - DISABLE_SECURITY_PLUGIN=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - siem_data:/usr/share/opensearch/data
+    networks:
+      soc_net:
+        ipv4_address: 172.28.0.10
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsSL http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  wazuh-manager:
+    image: wazuh/wazuh-manager:4.7.3
+    container_name: mini-soc-wazuh-manager
+    hostname: wazuh-manager
+    ports:
+      - "1514:1514"
+      - "1515:1515"
+      - "55000:55000"
+    volumes:
+      - wazuh_etc:/var/ossec/etc
+      - wazuh_logs:/var/ossec/logs
+      - ./rules/custom_wazuh_rules.xml:/var/ossec/etc/rules/local_rules.xml:ro
+      - ./logs/cowrie:/var/log/cowrie:ro
+      - ./logs/suricata:/var/log/suricata:ro
+    networks:
+      soc_net:
+        ipv4_address: 172.28.0.11
+    healthcheck:
+      test: ["CMD-SHELL", "/var/ossec/bin/wazuh-control status | grep -q 'wazuh-analysisd is running' || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+
+  cowrie:
+    image: cowrie/cowrie:2.5.0
+    container_name: mini-soc-cowrie
+    hostname: prod-bastion-01
+    ports:
+      - "2222:2222"
+      - "2223:2223"
+    volumes:
+      - ./logs/cowrie:/cowrie/cowrie-git/var/log/cowrie
+      - cowrie_dl:/cowrie/cowrie-git/var/lib/cowrie/downloads
+    networks:
+      soc_net:
+        ipv4_address: 172.28.0.20
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 2222 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  suricata:
+    image: jasonish/suricata:7.0.4
+    container_name: mini-soc-suricata
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+    command: ["-i", "eth0", "-v"]
+    volumes:
+      - ./logs/suricata:/var/log/suricata
+    networks:
+      soc_net:
+        ipv4_address: 172.28.0.30
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /var/log/suricata/eve.json || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+networks:
+  soc_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+volumes:
+  siem_data:
+  wazuh_etc:
+  wazuh_logs:
+  cowrie_dl:

